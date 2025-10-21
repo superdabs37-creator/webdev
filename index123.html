@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Sales Dashboard</title>
+  <style>
+   body {
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    color: #1e293b;
+  }
+
+  h1 {
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 30px;
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+  }
+
+  h2 {
+    color: #1d4ed8;
+    border-left: 5px solid #3b82f6;
+    padding-left: 10px;
+    margin-bottom: 10px;
+  }
+
+  /* Section Cards */
+  section {
+    background: white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+
+  section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Inputs & Buttons */
+  input, select {
+    padding: 10px;
+    margin: 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    width: calc(50% - 16px);
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s ease;
+  }
+
+  input:focus, select:focus {
+    border-color: #3b82f6;
+  }
+
+  button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  button:hover {
+    background-color: #2563eb;
+    transform: scale(1.05);
+  }
+
+  button.delete-btn {
+    background-color: #ef4444;
+  }
+
+  button.delete-btn:hover {
+    background-color: #dc2626;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  th {
+    background-color: #3b82f6;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+
+  tr:hover {
+    background-color: #e0f2fe;
+  }
+
+  /* Analytics Section Styling */
+  #analyticsTable td:nth-child(1) {
+    font-weight: bold;
+    color: #1d4ed8;
+  }
+
+  #analyticsTable td:nth-child(4) {
+    font-weight: bold;
+    color: #047857;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 600px) {
+    input, select {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    section {
+      padding: 15px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+    }
+  }
+  </style>
+</head>
+<body>
+  <h1>Product Management</h1>
+
+  <!-- Add Product -->
+  <section id="add-product">
+    <h2>Add Product</h2>
+    <input type="text" id="productName" placeholder="Product Name">
+    <input type="number" id="productPrice" placeholder="Price">
+    <button onclick="addProduct()">Add Product</button>
+  </section>
+
+  <!-- Add Sale -->
+  <section id="sales">
+    <h2>Add Sale</h2>
+    <select id="productSelect"></select>
+    <input type="number" id="quantity" placeholder="Quantity">
+    <button onclick="addSale()">Add Sale</button>
+  </section>
+
+  <!-- Edit / Update Sale -->
+  <section id="edit-sale">
+    <h2>Edit Sale</h2>
+    <select id="editProductSelect">
+      <option value="">Select Product to Edit</option>
+    </select>
+    <input type="number" id="editQuantity" placeholder="New Quantity">
+    <button onclick="updateSale()">Update Sale</button>
+  </section>
+
+  <!-- Product List -->
+  <section id="product-list">
+    <h2>Product List</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="productTable"></tbody>
+    </table>
+  </section>
+
+  <!-- Sales Analytics -->
+  <section id="analytics">
+    <h2>Sales Analytics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Product</th>
+          <th>Total Sold</th>
+          <th>Total Revenue</th>
+        </tr>
+      </thead>
+      <tbody id="analyticsTable"></tbody>
+    </table>
+  </section>
+
+  <script>
+    let products = [];
+    let sales = [];
+    let productId = 1;
+
+    // Add Product
+    function addProduct() {
+      const name = document.getElementById("productName").value.trim();
+      const price = parseFloat(document.getElementById("productPrice").value);
+      if (!name || isNaN(price) || price <= 0) {
+        alert("Please enter a valid product name and price.");
+        return;
+      }
+
+      products.push({ id: productId++, name, price });
+      document.getElementById("productName").value = "";
+      document.getElementById("productPrice").value = "";
+      updateProductList();
+      updateProductSelects();
+      updateAnalytics();
+    }
+
+    // Add Sale
+    function addSale() {
+      const productId = parseInt(document.getElementById("productSelect").value);
+      const quantity = parseInt(document.getElementById("quantity").value);
+      if (!productId || !quantity || quantity <= 0) {
+        alert("Please select a product and enter a valid quantity.");
+        return;
+      }
+
+      const existingSale = sales.find(s => s.productId === productId);
+      if (existingSale) {
+        existingSale.quantity += quantity;
+      } else {
+        sales.push({ productId, quantity });
+      }
+
+      document.getElementById("quantity").value = "";
+      updateAnalytics();
+    }
+
+    // Update / Edit Sale
+    function updateSale() {
+      const productId = parseInt(document.getElementById("editProductSelect").value);
+      const newQty = parseInt(document.getElementById("editQuantity").value);
+
+      if (!productId || !newQty || newQty <= 0) {
+        alert("Please select a product and enter a valid new quantity.");
+        return;
+      }
+
+      const sale = sales.find(s => s.productId === productId);
+      if (sale) {
+        sale.quantity = newQty;
+        alert("Sale updated successfully!");
+      } else {
+        alert("No sale found for that product.");
+      }
+
+      document.getElementById("editQuantity").value = "";
+      updateAnalytics();
+    }
+
+    // Delete Product
+    function deleteProduct(id) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      products = products.filter(p => p.id !== id);
+      sales = sales.filter(s => s.productId !== id);
+      updateProductList();
+      updateProductSelects();
+      updateAnalytics();
+    }
+
+    // Update Product List
+    function updateProductList() {
+      const table = document.getElementById("productTable");
+      table.innerHTML = "";
+      products.forEach(p => {
+        table.innerHTML += `
+          <tr>
+            <td>${p.id}</td>
+            <td>${p.name}</td>
+            <td>₱${p.price.toFixed(2)}</td>
+            <td><button class="delete-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
+          </tr>`;
+      });
+    }
+
+    // Update Dropdown Lists
+    function updateProductSelects() {
+      const addSelect = document.getElementById("productSelect");
+      const editSelect = document.getElementById("editProductSelect");
+
+      addSelect.innerHTML = "<option value=''>Select Product</option>";
+      editSelect.innerHTML = "<option value=''>Select Product to Edit</option>";
+
+      products.forEach(p => {
+        addSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        editSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+      });
+    }
+
+    // Analytics
+    function updateAnalytics() {
+      const analytics = products.map(p => {
+        const totalSold = sales
+          .filter(s => s.productId === p.id)
+          .reduce((sum, s) => sum + s.quantity, 0);
+        const totalRevenue = totalSold * p.price;
+        return { name: p.name, totalSold, totalRevenue };
+      });
+
+      analytics.sort((a, b) => b.totalSold - a.totalSold);
+
+      const table = document.getElementById("analyticsTable");
+      table.innerHTML = "";
+      analytics.forEach((a, index) => {
+        table.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${a.name}</td>
+            <td>${a.totalSold}</td>
+            <td>₱${a.totalRevenue.toFixed(2)}</td>
+          </tr>`;
+      });
+    }
+
+    // Initialize
+    updateProductList();
+    updateProductSelects();
+    updateAnalytics();
+  </script>
+</body>
+</html>
